@@ -1,18 +1,48 @@
 import { Component } from "pig-fwk";
-import { ElementAdd, ElementMove } from "../../domain/sync/types";
+import { ElementAdd, ElementInput, ElementMove } from "../domain/sync/types";
 import { Socket } from "socket.io-client";
+import { useEmit } from "./emit/Emit";
 
 export function useHtml(canvas: Component, socket: Socket) {
   function add(element: ElementAdd) {
-    const component = new Component(element.tagName).content(element.content || "");
+    const span = new Component("span").content("Hello, world!");
+    const component = new Component(element.tagName).children([span]);
+
     Object.keys(element.attributes).forEach((key) => {
       component.attribute(key, element.attributes[key]);
     });
     component.cssClass(element.cssClass || []);
-    component.cssClass(["absolute", "cursor-move", "select-none"]);
-    component.attribute("draggable", "true");
+    component.cssClass(["absolute"]);
 
     let offsetX, offsetY;
+
+    component.event("blur", (context, event) => {
+      component.removeCssClass("cursor-move");
+      component.attribute("draggable", "false");
+    });
+
+    span.event("blur", (context, event) => {
+      span.attribute("contenteditable", "false");
+    });
+
+    component.event("input", (context, event) => {
+      console.log("input");
+      let value = span.getElement().innerText;
+      useEmit(socket).input({
+        id: element.attributes.id,
+        content: value,
+      });
+    });
+
+    component.event("click", (context, event) => {
+      component.cssClass(["cursor-move"]);
+      component.attribute("draggable", "true");
+
+      if(event.shiftKey) {
+        span.attribute("contenteditable", "true");
+        span.getElement().focus();
+      }
+    });
 
     component.event("dragstart", (context, event) => {
       offsetX = event.clientX - component.getElement().getBoundingClientRect().left;
@@ -26,19 +56,10 @@ export function useHtml(canvas: Component, socket: Socket) {
       component.style("left", `${x}px`);
       component.style("top", `${y}px`);
 
-      socket.emit("canvas_update", {
-        event: "canvas_update__drop",
-        data: {
-          html: {
-            move: {
-              element: {
-                id: element.attributes.id,
-                x: x,
-                y: y,
-              },
-            },
-          },
-        },
+      useEmit(socket).drop({
+        id: element.attributes.id,
+        x: x,
+        y: y,
       });
     });
 
@@ -48,19 +69,10 @@ export function useHtml(canvas: Component, socket: Socket) {
       component.style("left", `${x}px`);
       component.style("top", `${y}px`);
 
-      socket.emit("canvas_update", {
-        event: "canvas_update__move",
-        data: {
-          html: {
-            move: {
-              element: {
-                id: element.attributes.id,
-                x: x,
-                y: y,
-              },
-            },
-          },
-        },
+      useEmit(socket).move({
+        id: element.attributes.id,
+        x: x,
+        y: y,
       });
     });
 
@@ -77,8 +89,14 @@ export function useHtml(canvas: Component, socket: Socket) {
     component?.style("top", `${element.y}px`);
   }
 
+  function input(element: ElementInput) {
+    const component = canvas.findComponentByAttribute("id", element.id);
+    component?.getChildren()[0]?.content(element.content || "");
+  }
+
   return {
     add,
     move,
+    input,
   };
 }

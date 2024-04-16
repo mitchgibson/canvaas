@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { useHtml } from "./Html.hook";
+import { useHtml } from "../Html";
 import { Component } from "pig-fwk";
 import { SyncTransactionHtmlContext } from "../../domain/sync/types";
 

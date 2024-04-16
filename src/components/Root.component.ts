@@ -1,9 +1,10 @@
 import { Button, Component, Container, Inject, RouterSlot } from "pig-fwk";
 import { SocketService } from "../services/Socket.service";
 import { v4 as geneateUuid } from "uuid";
-import { useSync } from "../hooks/sync/Sync.hook";
-import { useHtml } from "../hooks/sync/Html.hook";
+import { useSync } from "../functions/sync/Sync";
+import { useHtml } from "../functions/Html";
 import { ElementAdd } from "../domain/sync/types";
+import { useEmit } from "../functions/emit/Emit";
 
 export class RootComponent extends Container {
   private socket = Inject(SocketService).getSocket();
@@ -12,13 +13,13 @@ export class RootComponent extends Container {
   private canvasInner = new Component().cssClass(["w-full", "h-full", "relative"]);
 
   private console = new Container().fill().col()
-  .cssClass(["bg-neutral-900", "overflow-auto", "rounded-xl"])
+  .cssClass(["bg-neutral-900", "overflow-auto", "rounded-xl", "overflow-auto", "p-2"])
 
-  private consoleContainer = new Container().row().cssClass(["w-[800px]", "flex", "flex-grow", "rounded-xl", "border", "border-dashed", "border-emerald-400"]).children([this.console]);
+  private consoleContainer = new Container().row().cssClass(["w-[800px]", "flex", "h-[300px]", "rounded-xl", "border", "border-dashed", "border-emerald-400", "overflow-hidden"]).children([this.console]);
 
-  private send = new Button()
+  private insertButton = new Button()
     .cssClass(["py-2", "px-4", "my-4", "border", "border-emerald-400", "rounded-lg", "hover:bg-neutral-700"])
-    .content("Send")
+    .content("Button")
     .click(() => {
       const element: ElementAdd = {
         attributes: {
@@ -30,15 +31,11 @@ export class RootComponent extends Container {
       };
 
       useHtml(this.canvasInner, this.socket).add(element);
-      this.socket.emit("canvas_update", {
-        event: 'canvas_update__create',
-        data: {
-          html: {
-            add: {
-              element: element,
-            },
-          },
-        }
+      useEmit(this.socket).add({
+        attributes: element.attributes,
+        tagName: element.tagName,
+        content: element.content,
+        cssClass: element.cssClass,
       });
     });
 
@@ -52,6 +49,11 @@ export class RootComponent extends Container {
     this.socket.on("canvas_sync", (data) => {
       const { canvas } = useSync(this.socket);
       canvas(this.canvasInner, data.data);
+    });
+
+    this.socket.on("console_log", (data) => {
+      this.console.insertChild(new Component().content(data.message).cssClass(["text-emerald-400"]));
+      this.console.getElement().scrollTop = this.console.getElement().scrollHeight;
     });
   }
 
@@ -71,7 +73,7 @@ export class RootComponent extends Container {
           .fillWidth()
           .itemsCenter()
           .cssClass(["overflow-auto"])
-          .children([this.canvas, new Container().row().cssClass(["max-w-[800px]"]).fillWidth().justifyEnd().children([this.send])])
+          .children([this.canvas, new Container().row().cssClass(["max-w-[800px]"]).fillWidth().justifyEnd().children([this.insertButton])])
           .cssClass(["px-2"]),
         this.consoleContainer,
       ]);
