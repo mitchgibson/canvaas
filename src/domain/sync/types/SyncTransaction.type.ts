@@ -5,10 +5,17 @@ enum SyncTransactionContext {
 
 enum SyncTransactionAction {
     ADD = 'add',
-    MOVE = 'move'
+    MOVE = 'move',
+    DROP = 'drop'
 }
 
 export type ElementMove = {
+    id: string,
+    x: number,
+    y: number
+};
+
+export type ElementDrop = {
     id: string,
     x: number,
     y: number
@@ -29,7 +36,8 @@ export type SyncTransactionElement = ElementMove | ElementAdd;
 export type SyncTransactionHtmlContext = {
     [SyncTransactionContext.HTML]: {
         [SyncTransactionAction.ADD]: ElementAdd,
-        [SyncTransactionAction.MOVE]: ElementMove
+        [SyncTransactionAction.MOVE]: ElementMove,
+        [SyncTransactionAction.DROP]: ElementDrop
     }
 }
 

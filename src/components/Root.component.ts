@@ -11,25 +11,36 @@ export class RootComponent extends Container {
   private canvas = new Component().cssClass(["rounded-xl", "border", "border-dashed", "w-[800px]", "h-[530px]"]);
   private canvasInner = new Component().cssClass(["w-full", "h-full", "relative"]);
 
-  private send = new Button().content("Send").click(() => {
-    const element: ElementAdd = {
-      attributes: {
-        id: geneateUuid(),
-      },
-      tagName: "button",
-      content: "Hello, world!",
-      cssClass: ["border", "border-emerald-400", "text-emerald-400", "rounded-lg", "px-4", "py-2", "m-2", "hover:bg-neutral-900"],
-    };
+  private console = new Container().fill().col()
+  .cssClass(["bg-neutral-900", "overflow-auto", "rounded-xl"])
 
-    useHtml(this.canvasInner, this.socket).add(element);
-    this.socket.emit("canvas_update", {
-      html: {
-        add: {
-          element: element,
+  private consoleContainer = new Container().row().cssClass(["w-[800px]", "flex", "flex-grow", "rounded-xl", "border", "border-dashed", "border-emerald-400"]).children([this.console]);
+
+  private send = new Button()
+    .cssClass(["py-2", "px-4", "my-4", "border", "border-emerald-400", "rounded-lg", "hover:bg-neutral-700"])
+    .content("Send")
+    .click(() => {
+      const element: ElementAdd = {
+        attributes: {
+          id: geneateUuid(),
+        },
+        tagName: "button",
+        content: "Hello, world!",
+        cssClass: ["border", "border-emerald-400", "text-emerald-400", "rounded-lg", "px-4", "py-2", "m-2", "hover:bg-neutral-900"],
+      };
+
+      useHtml(this.canvasInner, this.socket).add(element);
+      this.socket.emit("canvas_update", {
+        event: 'canvas_update__create',
+        data: {
+          html: {
+            add: {
+              element: element,
+            },
+          },
         }
-      },
+      });
     });
-  });
 
   constructor() {
     super();
@@ -40,7 +51,7 @@ export class RootComponent extends Container {
 
     this.socket.on("canvas_sync", (data) => {
       const { canvas } = useSync(this.socket);
-      canvas(this.canvasInner, data);
+      canvas(this.canvasInner, data.data);
     });
   }
 
@@ -54,6 +65,15 @@ export class RootComponent extends Container {
       .itemsCenter()
       .justifyCenter()
       .cssClass(["py-4", "overflow-hidden"])
-      .children([new Container().col().flexGrow().fillWidth().itemsCenter().cssClass(["overflow-auto", "gap-y-12"]).children([this.canvas, this.send])]);
+      .children([
+        new Container()
+          .col()
+          .fillWidth()
+          .itemsCenter()
+          .cssClass(["overflow-auto"])
+          .children([this.canvas, new Container().row().cssClass(["max-w-[800px]"]).fillWidth().justifyEnd().children([this.send])])
+          .cssClass(["px-2"]),
+        this.consoleContainer,
+      ]);
   }
 }

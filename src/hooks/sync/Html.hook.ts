@@ -20,6 +20,28 @@ export function useHtml(canvas: Component, socket: Socket) {
       event.dataTransfer.setDragImage(new Image(), 0, 0);
     });
 
+    component.event("dragend", (context, event) => {
+      const x = event.clientX - offsetX - canvas.getElement().getBoundingClientRect().left;
+      const y = event.clientY - offsetY - canvas.getElement().getBoundingClientRect().top;
+      component.style("left", `${x}px`);
+      component.style("top", `${y}px`);
+
+      socket.emit("canvas_update", {
+        event: "canvas_update__drop",
+        data: {
+          html: {
+            move: {
+              element: {
+                id: element.attributes.id,
+                x: x,
+                y: y,
+              },
+            },
+          },
+        },
+      });
+    });
+
     component.event("drag", (context, event) => {
       const x = event.clientX - offsetX - canvas.getElement().getBoundingClientRect().left;
       const y = event.clientY - offsetY - canvas.getElement().getBoundingClientRect().top;
@@ -27,12 +49,15 @@ export function useHtml(canvas: Component, socket: Socket) {
       component.style("top", `${y}px`);
 
       socket.emit("canvas_update", {
-        html: {
-          move: {
-            element: {
-              id: element.attributes.id,
-              x: x,
-              y: y,
+        event: "canvas_update__move",
+        data: {
+          html: {
+            move: {
+              element: {
+                id: element.attributes.id,
+                x: x,
+                y: y,
+              },
             },
           },
         },
