@@ -29,6 +29,8 @@ export type ElementAdd = {
   tagName: string;
   content?: string;
   cssClass?: string[];
+  x?: number;
+  y?: number;
 };
 
 export type ElementInput = {

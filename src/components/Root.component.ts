@@ -1,43 +1,17 @@
-import { Button, Component, Container, Inject, RouterSlot } from "pig-fwk";
+import { Component, Container, Inject, RouterSlot } from "pig-fwk";
 import { SocketService } from "../services/Socket.service";
-import { v4 as geneateUuid } from "uuid";
 import { useSync } from "../functions/sync/Sync";
-import { useHtml } from "../functions/Html";
-import { ElementAdd } from "../domain/sync/types";
-import { useEmit } from "../functions/emit/Emit";
+import { Canvaas } from "./Canvaas.component";
 
 export class RootComponent extends Container {
   private socket = Inject(SocketService).getSocket();
-
-  private canvas = new Component().cssClass(["rounded-xl", "border", "border-dashed", "w-[800px]", "h-[530px]"]);
-  private canvasInner = new Component().cssClass(["w-full", "h-full", "relative"]);
+  private canvas = new Canvaas();
+  private canvasInner = this.canvas.getCanvasInner();
 
   private console = new Container().fill().col()
   .cssClass(["bg-neutral-900", "overflow-auto", "rounded-xl", "overflow-auto", "p-2"])
 
   private consoleContainer = new Container().row().cssClass(["w-[800px]", "flex", "h-[300px]", "rounded-xl", "border", "border-dashed", "border-emerald-400", "overflow-hidden"]).children([this.console]);
-
-  private insertButton = new Button()
-    .cssClass(["py-2", "px-4", "my-4", "border", "border-emerald-400", "rounded-lg", "hover:bg-neutral-700"])
-    .content("Button")
-    .click(() => {
-      const element: ElementAdd = {
-        attributes: {
-          id: geneateUuid(),
-        },
-        tagName: "button",
-        content: "Hello, world!",
-        cssClass: ["border", "border-emerald-400", "text-emerald-400", "rounded-lg", "px-4", "py-2", "m-2", "hover:bg-neutral-900"],
-      };
-
-      useHtml(this.canvasInner, this.socket).add(element);
-      useEmit(this.socket).add({
-        attributes: element.attributes,
-        tagName: element.tagName,
-        content: element.content,
-        cssClass: element.cssClass,
-      });
-    });
 
   constructor() {
     super();
@@ -66,14 +40,14 @@ export class RootComponent extends Container {
       .flexGrow()
       .itemsCenter()
       .justifyCenter()
-      .cssClass(["py-4", "overflow-hidden"])
+      .cssClass(["py-4", "overflow-hidden", "gap-y-4"])
       .children([
         new Container()
           .col()
           .fillWidth()
           .itemsCenter()
           .cssClass(["overflow-auto"])
-          .children([this.canvas, new Container().row().cssClass(["max-w-[800px]"]).fillWidth().justifyEnd().children([this.insertButton])])
+          .children([this.canvas, new Container().row().cssClass(["max-w-[800px]"]).fillWidth().justifyEnd()])
           .cssClass(["px-2"]),
         this.consoleContainer,
       ]);
